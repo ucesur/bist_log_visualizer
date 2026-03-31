@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BIST Signal Bot — Log Visualizer</title>
+
+  <!-- External dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Project stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <header>
+    <div>
+      <div class="logo">BIST <span>Signal</span> Analyzer</div>
+      <div class="tagline">Live Log Visualizer · v2.0</div>
+    </div>
+
+    <div class="header-right">
+      <div id="statusPill" class="pill">● LOADED</div>
+
+      <!-- Live controls — revealed once a file is being watched -->
+      <div id="liveControls">
+        <select class="hdr-select" id="intervalSelect" title="Refresh interval">
+          <option value="5">5 s</option>
+          <option value="10" selected>10 s</option>
+          <option value="30">30 s</option>
+          <option value="60">60 s</option>
+          <option value="120">2 min</option>
+        </select>
+
+        <div id="countdownWrap">
+          <svg id="countdownRing" viewBox="0 0 22 22">
+            <circle cx="11" cy="11" r="9"/>
+            <circle id="countdownArc" cx="11" cy="11" r="9"/>
+          </svg>
+          <span id="countdownLabel">10</span>
+        </div>
+
+        <div id="livePill" class="pill">
+          <span class="pulse"></span>
+          <span id="livePillText">LIVE</span>
+        </div>
+
+        <button class="hdr-btn" id="pauseBtn">⏸ Pause</button>
+        <button class="hdr-btn danger" id="stopBtn">✕ Stop</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── UPLOAD / PASTE ZONE ────────────────────────────────────────────── -->
+  <div id="dropZone">
+    <span class="drop-icon">📂</span>
+    <h2>BIST Signal Bot — Log Visualizer</h2>
+    <p>Drag &amp; drop your log file, open it, or watch it live for automatic updates.</p>
+
+    <div class="upload-actions">
+      <button class="upload-btn watch" id="watchBtn">🔴 Watch File Live</button>
+      <button class="upload-btn secondary" id="openOnceBtn">📂 Open Once</button>
+    </div>
+    <input type="file" id="fileInputHidden" accept=".log,.txt">
+
+    <div id="noSupportBanner">
+      ⚠ <strong>Live Watch</strong> requires Chrome or Edge 86+.
+      Use <em>Open Once</em> or paste text below in Firefox / Safari.
+    </div>
+
+    <div class="or-divider">or paste log text</div>
+    <textarea id="pasteArea" placeholder="Paste log content here…&#10;2026-03-31 10:05:48 [INFO] ECILC: 107.0 TRY → WAIT (NEUTRAL) | vol 1.0x …"></textarea>
+    <div class="upload-actions">
+      <button class="upload-btn primary" id="visualizeBtn">▶ Visualize</button>
+    </div>
+    <div id="errMsg"></div>
+  </div>
+
+  <!-- ── DASHBOARD ──────────────────────────────────────────────────────── -->
+  <div id="dashboard">
+    <div class="summary-bar" id="summaryBar"></div>
+
+    <div class="section-title">Price (TRY)</div>
+    <div class="charts-grid" id="priceChartsGrid"></div>
+
+    <div class="section-title">Volume Ratio</div>
+    <div class="charts-grid" id="volChartsGrid"></div>
+
+    <div class="section-title">Support &amp; Resistance Distance</div>
+    <div class="charts-grid" id="srChartsGrid"></div>
+
+    <div class="section-title" style="margin-top:8px">Scan Events</div>
+    <div class="log-table-wrap" id="logTableWrap"></div>
+  </div>
+
+  <!-- ── Project scripts (order matters) ───────────────────────────────── -->
+  <script src="js/config.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/watcher.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
