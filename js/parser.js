@@ -1,31 +1,34 @@
 /**
  * parser.js
- * Parses raw BIST Signal Bot log text into structured data.
+ * Parses raw BIST Signal Bot v2.0 log text into structured data.
+ *
+ * New fields vs v1.x:
+ *   rsi   — Relative Strength Index (null while warming up, then a float)
+ *   mom   — Momentum % (null while warming up, then ±N.NN)
+ *   trend — EMA trend label e.g. "sideways[default]", "sideways[ema]"
  *
  * Exported function:
  *   parseLog(text) → { data, events }
  */
 
 /**
- * Regular expression that matches INFO-level stock scan lines.
+ * Matches v2.0 INFO stock-scan lines.
  *
- * Captures (in order):
- *   1  timestamp       e.g. "2026-03-31 10:05:48"
- *   2  symbol          e.g. "ECILC"
- *   3  price           e.g. "107.0"
- *   4  change (opt.)   e.g. "+0.70" or "-1.90"  (absent on first scan)
- *   5  action          e.g. "WAIT" or "BUY"
- *   6  signal          e.g. "NEUTRAL" or "BUY"
- *   7  vol ratio       e.g. "1.0"
- *   8  support dist    e.g. "7.00"
- *   9  resistance dist e.g. "8.00"
+ * Example lines handled:
+ *   ECILC: 108.1 TRY → WAIT (NEUTRAL) | vol 1.0x ⏳vol-warmup 1/5 | sup+8.10 res-6.90 | RSI=⏳ MOM=⏳ trend=sideways[default]
+ *   TTRAK: 448.5 TRY (+1.00) → WAIT (NEUTRAL) | vol 1.1x | sup+18.50 res-11.50 | RSI=⏳ MOM=⏳ trend=sideways[default]
+ *   TTRAK: 448.75 TRY (+0.50) → WAIT (NEUTRAL) | vol 1.2x | sup+18.75 res-11.25 | RSI=51.9 MOM=+0.1% trend=sideways[default]
+ *   KCAER: 11.32 TRY (-0.01) → WAIT (NEUTRAL) | vol 0.5x | sup+1.32 res--0.12 | RSI=⏳ MOM=+1.3% trend=sideways[default]
  *
- * Works for both warmup lines (⏳warmup N/5) and post-warmup lines.
+ * Notes:
+ *   - res can be negative (stock above resistance) → appears as "res--0.12"
+ *   - RSI is literal "⏳" during warmup, then a float like "51.9"
+ *   - MOM is literal "⏳" during warmup, then "±N.NN%"
  */
-const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? → (\w+) \((\w+)\) \| vol ([\d.]+)x.*\| sup\+([\d.]+) res-([\d.]+)/;
+const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? \u2192 (\w+) \((\w+)\) \| vol ([\d.]+)x.*\| sup\+([\d.]+) res-([+-]?[\d.]+) \| RSI=(\u23f3|[\d.]+) MOM=(\u23f3|[+-]?[\d.]+%) trend=(\S+)/u;
 
 /**
- * Parses a BIST Signal Bot log file.
+ * Parses a BIST Signal Bot v2.0 log file.
  *
  * @param  {string} text  Raw log file contents.
  * @returns {{ data: Object, events: Array }}
@@ -34,30 +37,31 @@ const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): (
  */
 function parseLog(text) {
   const lines  = text.split('\n');
-  const data   = {};   // { [symbol]: entry[] }
-  const events = [];   // flat list of all entries
+  const data   = {};
+  const events = [];
 
   for (const line of lines) {
     const m = line.match(LOG_LINE_RE);
     if (!m) continue;
 
-    const [, ts, sym, price, chg, action, signal, vol, sup, res] = m;
+    const [, ts, sym, price, chg, action, signal, vol, sup, res, rsiRaw, momRaw, trend] = m;
 
     const entry = {
-      /** "HH:MM" used as chart X-axis label */
-      time:   ts.slice(11, 16),
-      /** Full ISO-ish timestamp */
+      time:   ts.slice(11, 16),   // "HH:MM" for chart X-axis
       ts,
       price:  parseFloat(price),
-      /** Price change vs previous scan, or null if not present */
       chg:    chg != null ? parseFloat(chg) : null,
       action,
       signal,
       vol:    parseFloat(vol),
-      /** Distance above support level (positive = above support) */
       sup:    parseFloat(sup),
-      /** Distance below resistance level (positive = below resistance) */
+      /** Positive = below resistance; negative = above (breakout) */
       res:    parseFloat(res),
+      /** RSI value, or null during warmup */
+      rsi:    rsiRaw === '\u23f3' ? null : parseFloat(rsiRaw),
+      /** Momentum %, stored as plain number (e.g. 1.34 for "+1.34%"), null during warmup */
+      mom:    momRaw === '\u23f3' ? null : parseFloat(momRaw.replace('%', '')),
+      trend,
     };
 
     if (!data[sym]) data[sym] = [];

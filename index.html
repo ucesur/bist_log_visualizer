@@ -18,7 +18,7 @@
   <header>
     <div>
       <div class="logo">BIST <span>Signal</span> Analyzer</div>
-      <div class="tagline">Live Log Visualizer · v2.0</div>
+      <div class="tagline">Live Log Visualizer · v3.0 · Bot v2.0 format</div>
     </div>
 
     <div class="header-right">
@@ -56,8 +56,9 @@
   <!-- ── UPLOAD / PASTE ZONE ────────────────────────────────────────────── -->
   <div id="dropZone">
     <span class="drop-icon">📂</span>
-    <h2>BIST Signal Bot — Log Visualizer</h2>
-    <p>Drag &amp; drop your log file, open it, or watch it live for automatic updates.</p>
+    <h2>BIST Signal Bot v2.0 — Log Visualizer</h2>
+    <p>Drag &amp; drop your log file, open it, or watch it live for automatic updates.<br>
+       Supports bot v2.0 format with RSI, Momentum &amp; Trend indicators.</p>
 
     <div class="upload-actions">
       <button class="upload-btn watch" id="watchBtn">🔴 Watch File Live</button>
@@ -71,7 +72,7 @@
     </div>
 
     <div class="or-divider">or paste log text</div>
-    <textarea id="pasteArea" placeholder="Paste log content here…&#10;2026-03-31 10:05:48 [INFO] ECILC: 107.0 TRY → WAIT (NEUTRAL) | vol 1.0x …"></textarea>
+    <textarea id="pasteArea" placeholder="Paste log content here…&#10;2026-04-06 13:17:59 [INFO] ECILC: 108.1 TRY → WAIT (NEUTRAL) | vol 1.0x ⏳vol-warmup 1/5 | sup+8.10 res-6.90 | RSI=⏳ MOM=⏳ trend=sideways[default]"></textarea>
     <div class="upload-actions">
       <button class="upload-btn primary" id="visualizeBtn">▶ Visualize</button>
     </div>
@@ -90,6 +91,12 @@
 
     <div class="section-title">Support &amp; Resistance Distance</div>
     <div class="charts-grid" id="srChartsGrid"></div>
+
+    <div class="section-title">RSI (14-period)</div>
+    <div class="charts-grid" id="rsiChartsGrid"></div>
+
+    <div class="section-title">Momentum %</div>
+    <div class="charts-grid" id="momChartsGrid"></div>
 
     <div class="section-title" style="margin-top:8px">Scan Events</div>
     <div class="log-table-wrap" id="logTableWrap"></div>
