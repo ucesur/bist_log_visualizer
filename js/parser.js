@@ -31,7 +31,7 @@
  *
  * The optional trailing "| conf=28%[LOW]" field is intentionally ignored.
  */
-const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? \u2192 (\w+) \(([^)]+)\) \| vol ([\d.]+)x.*\| sup\+([+-]?[\d.]+) res-([+-]?[\d.]+) \| RSI=(\u23f3|[\d.]+) MOM=(\u23f3|[+-]?[\d.]+%) trend=(\S+)/u;
+const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? \u2192 (\w+) \((.+?)\) \| vol ([\d.]+)x.*\| sup\+([+-]?[\d.]+) res-([+-]?[\d.]+) \| RSI=(\u23f3|[\d.]+) MOM=(\u23f3|[+-]?[\d.]+%) trend=(\S+)/u;
 
 /**
  * Parses a BIST Signal Bot v2.0 log file.

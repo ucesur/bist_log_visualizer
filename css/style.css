@@ -175,6 +175,7 @@ tbody td         { padding:7px 13px; white-space:nowrap; }
 .badge-profit   { background:rgba(0,212,170,.28);   color:#05ffd0; border:1px solid rgba(0,212,170,.4); }
 /* STOP LOSS — deep red, more urgent than plain SELL */
 .badge-stoploss { background:rgba(255,64,96,.28);   color:#ff8099; border:1px solid rgba(255,64,96,.4); }
+.badge-breakout  { background:rgba(167,139,250,.18); color:#c4b5fd; border:1px solid rgba(167,139,250,.35); }
 
 .sym-ecilc { color:var(--ecilc); }
 .sym-kcaer { color:var(--kcaer); }

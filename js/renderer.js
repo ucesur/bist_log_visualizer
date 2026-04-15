@@ -162,5 +162,6 @@ function _signalBadge(signal) {
   if (s.includes('SELL')        || s.includes('SHORT'))       cls = 'badge-sell';
   if (s.includes('TAKE PROFIT') || s.includes('TAKE_PROFIT')) cls = 'badge-profit';
   if (s.includes('STOP LOSS')   || s.includes('STOP_LOSS'))   cls = 'badge-stoploss';
+  if (s.includes('BREAKOUT'))                                  cls = 'badge-breakout';
   return `<span class="badge ${cls}">${signal}</span>`;
 }
