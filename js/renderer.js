@@ -66,7 +66,7 @@ function buildSummary(data, events, symbols, isUpdate) {
       <div class="sub-info">
         <span class="${cls}">${sign}${pctChg}%</span>
         <span>vol ${last.vol.toFixed(1)}x</span>
-        <span>sup +${last.sup.toFixed(2)}</span>
+        <span class="${last.sup < 0 ? 'neg' : ''}">sup ${last.sup >= 0 ? '+' : ''}${last.sup.toFixed(2)}</span>
         <span>res ${last.res >= 0 ? '-' : '+'}${Math.abs(last.res).toFixed(2)}</span>
       </div>
       <div class="indicator-row">
@@ -137,7 +137,7 @@ function buildTable(events, isUpdate) {
       <td>${e.price.toFixed(2)}</td>
       <td>${chgHtml}</td>
       <td>${e.vol.toFixed(2)}x</td>
-      <td class="pos">+${e.sup.toFixed(2)}</td>
+      <td class="${e.sup < 0 ? 'neg' : 'pos'}">${e.sup >= 0 ? '+' : ''}${e.sup.toFixed(2)}</td>
       <td>${resHtml}</td>
       <td>${rsiHtml}</td>
       <td>${momHtml}</td>
