@@ -2,38 +2,42 @@
  * parser.js
  * Parses raw BIST Signal Bot v2.0 log text into structured data.
  *
- * New fields vs v1.x:
- *   rsi   — Relative Strength Index (null while warming up, then a float)
- *   mom   — Momentum % (null while warming up, then ±N.NN)
- *   trend — EMA trend label e.g. "sideways[default]", "sideways[ema]"
+ * Fixes vs previous version:
+ *   - Signal group changed from \(\w+\) → \([^)]+\) to handle
+ *     multi-word signals like "TAKE PROFIT", "STOP LOSS", etc.
+ *   - res group uses [+-]?[\d.]+ to handle negative values (stock
+ *     above resistance), e.g. "res--29.50"
  *
  * Exported function:
  *   parseLog(text) → { data, events }
  */
 
 /**
- * Matches v2.0 INFO stock-scan lines.
+ * Regex that matches v2.0 INFO stock-scan lines.
  *
- * Example lines handled:
- *   ECILC: 108.1 TRY → WAIT (NEUTRAL) | vol 1.0x ⏳vol-warmup 1/5 | sup+8.10 res-6.90 | RSI=⏳ MOM=⏳ trend=sideways[default]
- *   TTRAK: 448.5 TRY (+1.00) → WAIT (NEUTRAL) | vol 1.1x | sup+18.50 res-11.50 | RSI=⏳ MOM=⏳ trend=sideways[default]
- *   TTRAK: 448.75 TRY (+0.50) → WAIT (NEUTRAL) | vol 1.2x | sup+18.75 res-11.25 | RSI=51.9 MOM=+0.1% trend=sideways[default]
- *   KCAER: 11.32 TRY (-0.01) → WAIT (NEUTRAL) | vol 0.5x | sup+1.32 res--0.12 | RSI=⏳ MOM=+1.3% trend=sideways[default]
+ * Key capture groups:
+ *  1  timestamp         2026-04-15 10:22:34
+ *  2  symbol            TTRAK
+ *  3  price             494.5
+ *  4  change (opt.)     +2.50
+ *  5  action            SELL
+ *  6  signal            TAKE PROFIT   ← [^)]+ handles multi-word
+ *  7  vol ratio         0.4
+ *  8  support dist      60.25
+ *  9  resistance dist   -29.50        ← [+-]? handles negative
+ * 10  RSI               ⏳ or 51.9
+ * 11  Momentum          ⏳ or +0.8%
+ * 12  trend             sideways[default]
  *
- * Notes:
- *   - res can be negative (stock above resistance) → appears as "res--0.12"
- *   - RSI is literal "⏳" during warmup, then a float like "51.9"
- *   - MOM is literal "⏳" during warmup, then "±N.NN%"
+ * The optional trailing "| conf=28%[LOW]" field is intentionally ignored.
  */
-const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? \u2192 (\w+) \((\w+)\) \| vol ([\d.]+)x.*\| sup\+([\d.]+) res-([+-]?[\d.]+) \| RSI=(\u23f3|[\d.]+) MOM=(\u23f3|[+-]?[\d.]+%) trend=(\S+)/u;
+const LOG_LINE_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[INFO\] ([A-Z]+): ([\d.]+) TRY(?: \(([+-][\d.]+)\))? \u2192 (\w+) \(([^)]+)\) \| vol ([\d.]+)x.*\| sup\+([\d.]+) res-([+-]?[\d.]+) \| RSI=(\u23f3|[\d.]+) MOM=(\u23f3|[+-]?[\d.]+%) trend=(\S+)/u;
 
 /**
  * Parses a BIST Signal Bot v2.0 log file.
  *
  * @param  {string} text  Raw log file contents.
  * @returns {{ data: Object, events: Array }}
- *   data   — keyed by symbol; each value is an array of scan entries.
- *   events — flat chronological array of all scan entries (with sym field).
  */
 function parseLog(text) {
   const lines  = text.split('\n');
@@ -47,19 +51,18 @@ function parseLog(text) {
     const [, ts, sym, price, chg, action, signal, vol, sup, res, rsiRaw, momRaw, trend] = m;
 
     const entry = {
-      time:   ts.slice(11, 16),   // "HH:MM" for chart X-axis
+      time:   ts.slice(11, 16),
       ts,
       price:  parseFloat(price),
       chg:    chg != null ? parseFloat(chg) : null,
       action,
-      signal,
+      /** Full signal text, e.g. "NEUTRAL", "TAKE PROFIT", "STOP LOSS" */
+      signal: signal.trim(),
       vol:    parseFloat(vol),
       sup:    parseFloat(sup),
       /** Positive = below resistance; negative = above (breakout) */
       res:    parseFloat(res),
-      /** RSI value, or null during warmup */
       rsi:    rsiRaw === '\u23f3' ? null : parseFloat(rsiRaw),
-      /** Momentum %, stored as plain number (e.g. 1.34 for "+1.34%"), null during warmup */
       mom:    momRaw === '\u23f3' ? null : parseFloat(momRaw.replace('%', '')),
       trend,
     };

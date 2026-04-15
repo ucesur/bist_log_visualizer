@@ -1,17 +1,7 @@
 /**
- * charts.js
- * Configures Chart.js defaults and provides helpers to create / destroy charts.
- *
- * Exported functions:
- *   destroyCharts()
- *   buildPriceCharts(data, symbols)
- *   buildVolCharts(data, symbols)
- *   buildSRCharts(data, symbols)
- *   buildRSICharts(data, symbols)
- *   buildMOMCharts(data, symbols)
+ * charts.js — Chart.js setup and all chart builders.
  */
 
-/* ── Chart.js global defaults ──────────────────────────────────────────── */
 Chart.defaults.color       = '#4a6070';
 Chart.defaults.font.family = "'Share Tech Mono', monospace";
 
@@ -38,7 +28,7 @@ function _makeChart(id, datasets, opts = {}) {
       },
       scales: {
         x: { type: 'category', grid: GRID_CFG, ticks: { maxTicksLimit: 10, font: { size: 9 } } },
-        y: { grid: GRID_CFG, ticks: { font: { size: 9 }, ...(opts.yTicks || {}) }, ...(opts.yScale || {}) },
+        y: { grid: GRID_CFG, ticks: { font: { size: 9 } }, ...(opts.yScale || {}) },
       },
       elements: {
         line:  { tension: .35, borderWidth: 1.8 },
@@ -48,21 +38,15 @@ function _makeChart(id, datasets, opts = {}) {
   });
 }
 
-/** Creates a chart card DOM node with a canvas and appends it to the grid. */
 function _createCard(grid, color, title, canvasId) {
   const card = document.createElement('div');
   card.className = 'chart-card fade-in';
-  card.innerHTML = `
-    <h3><span class="dot" style="background:${color}"></span>${title}</h3>
-    <canvas id="${canvasId}"></canvas>`;
+  card.innerHTML = `<h3><span class="dot" style="background:${color}"></span>${title}</h3><canvas id="${canvasId}"></canvas>`;
   grid.appendChild(card);
 }
 
-/** Returns only the non-null data points for a field. Null = warmup, skip. */
 function _validPoints(rows, field) {
-  return rows
-    .filter(r => r[field] !== null)
-    .map(r => ({ x: r.time, y: r[field] }));
+  return rows.filter(r => r[field] !== null).map(r => ({ x: r.time, y: r[field] }));
 }
 
 /* ── Public API ─────────────────────────────────────────────────────────── */
@@ -72,144 +56,90 @@ function destroyCharts() {
   State.chartInstances = [];
 }
 
-/* ── Price ──────────────────────────────────────────────────────────────── */
 function buildPriceCharts(data, symbols) {
   const grid = document.getElementById('priceChartsGrid');
   grid.innerHTML = '';
   symbols.forEach(sym => {
-    const rows  = data[sym];
-    const color = SYM_COLOR[sym] || '#888';
-    const id    = `priceChart_${sym}`;
+    const rows = data[sym], color = SYM_COLOR[sym] || '#888', id = `priceChart_${sym}`;
     _createCard(grid, color, `${sym} — Price (TRY)`, id);
     State.chartInstances.push(_makeChart(id, [{
-      label: sym,
-      data: rows.map(r => ({ x: r.time, y: r.price })),
+      label: sym, data: rows.map(r => ({ x: r.time, y: r.price })),
       borderColor: color, backgroundColor: color + '18', fill: true,
       borderWidth: 1.8, pointRadius: 2, pointHoverRadius: 5, tension: .35,
     }], { tooltipCb: { label: c => ` ${c.parsed.y.toFixed(2)} TRY` } }));
   });
 }
 
-/* ── Volume ─────────────────────────────────────────────────────────────── */
 function buildVolCharts(data, symbols) {
   const grid = document.getElementById('volChartsGrid');
   grid.innerHTML = '';
   symbols.forEach(sym => {
-    const rows  = data[sym];
-    const color = SYM_COLOR[sym] || '#888';
-    const id    = `volChart_${sym}`;
+    const rows = data[sym], color = SYM_COLOR[sym] || '#888', id = `volChart_${sym}`;
     _createCard(grid, color, `${sym} — Volume Ratio`, id);
     State.chartInstances.push(_makeChart(id, [
-      {
-        label: 'Vol Ratio',
-        data: rows.map(r => ({ x: r.time, y: r.vol })),
+      { label: 'Vol Ratio', data: rows.map(r => ({ x: r.time, y: r.vol })),
         borderColor: color, backgroundColor: color + '22', fill: true,
-        borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3,
-      },
-      {
-        label: 'Threshold 1.5×',
-        data: rows.map(r => ({ x: r.time, y: 1.5 })),
+        borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3 },
+      { label: 'Threshold 1.5×', data: rows.map(r => ({ x: r.time, y: 1.5 })),
         borderColor: 'rgba(255,64,96,.5)', borderDash: [5, 4],
-        borderWidth: 1, pointRadius: 0, tension: 0,
-      },
+        borderWidth: 1, pointRadius: 0, tension: 0 },
     ], { tooltipCb: { label: c => ` ${c.parsed.y.toFixed(2)}x` } }));
   });
 }
 
-/* ── Support / Resistance ───────────────────────────────────────────────── */
 function buildSRCharts(data, symbols) {
   const grid = document.getElementById('srChartsGrid');
   grid.innerHTML = '';
   symbols.forEach(sym => {
-    const rows  = data[sym];
-    const color = SYM_COLOR[sym] || '#888';
-    const id    = `srChart_${sym}`;
+    const rows = data[sym], color = SYM_COLOR[sym] || '#888', id = `srChart_${sym}`;
     _createCard(grid, color, `${sym} — Support / Resistance Distance`, id);
     State.chartInstances.push(_makeChart(id, [
-      {
-        label: 'Support (sup+)',
-        data: rows.map(r => ({ x: r.time, y: r.sup })),
-        borderColor: '#00d4aa', fill: false,
-        borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3,
-      },
-      {
-        label: 'Resistance (res-)',
-        data: rows.map(r => ({ x: r.time, y: r.res })),
-        borderColor: '#ff4060', fill: false,
-        borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3,
-      },
+      { label: 'Support (sup+)', data: rows.map(r => ({ x: r.time, y: r.sup })),
+        borderColor: '#00d4aa', fill: false, borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3 },
+      { label: 'Resistance (res)', data: rows.map(r => ({ x: r.time, y: r.res })),
+        borderColor: '#ff4060', fill: false, borderWidth: 1.6, pointRadius: 2, pointHoverRadius: 5, tension: .3 },
     ]));
   });
 }
 
-/* ── RSI ────────────────────────────────────────────────────────────────── */
 function buildRSICharts(data, symbols) {
   const grid = document.getElementById('rsiChartsGrid');
   grid.innerHTML = '';
   symbols.forEach(sym => {
-    const rows  = data[sym];
-    const color = SYM_COLOR[sym] || '#888';
-    const id    = `rsiChart_${sym}`;
+    const rows = data[sym], color = SYM_COLOR[sym] || '#888', id = `rsiChart_${sym}`;
     _createCard(grid, color, `${sym} — RSI (14)`, id);
-
     const pts = _validPoints(rows, 'rsi');
-
-    // horizontal reference lines shared across all x labels
     const xLabels = rows.map(r => r.time);
-    const makeLine = (val, col, lbl) => ({
-      label: lbl,
-      data: xLabels.map(x => ({ x, y: val })),
-      borderColor: col, borderDash: [4, 4],
-      borderWidth: 1, pointRadius: 0, tension: 0,
+    const hLine = (val, col, lbl) => ({
+      label: lbl, data: xLabels.map(x => ({ x, y: val })),
+      borderColor: col, borderDash: [4, 4], borderWidth: 1, pointRadius: 0, tension: 0,
     });
-
     State.chartInstances.push(_makeChart(id, [
-      {
-        label: 'RSI',
-        data: pts,
-        borderColor: color, backgroundColor: color + '15', fill: false,
-        borderWidth: 1.8, pointRadius: 2, pointHoverRadius: 5, tension: .35,
-      },
-      makeLine(70, 'rgba(255,64,96,.6)',  'Overbought 70'),
-      makeLine(50, 'rgba(74,96,112,.5)',  'Midline 50'),
-      makeLine(30, 'rgba(0,212,170,.6)',  'Oversold 30'),
+      { label: 'RSI', data: pts, borderColor: color, backgroundColor: color + '15', fill: false,
+        borderWidth: 1.8, pointRadius: 2, pointHoverRadius: 5, tension: .35 },
+      hLine(70, 'rgba(255,64,96,.6)',  'Overbought 70'),
+      hLine(50, 'rgba(74,96,112,.5)', 'Midline 50'),
+      hLine(30, 'rgba(0,212,170,.6)', 'Oversold 30'),
     ], {
-      yTicks: { min: 0, max: 100 },
       yScale: { min: 0, max: 100 },
       tooltipCb: { label: c => c.dataset.label === 'RSI' ? ` RSI ${c.parsed.y.toFixed(1)}` : ` ${c.dataset.label}` },
     }));
   });
 }
 
-/* ── Momentum ───────────────────────────────────────────────────────────── */
 function buildMOMCharts(data, symbols) {
   const grid = document.getElementById('momChartsGrid');
   grid.innerHTML = '';
   symbols.forEach(sym => {
-    const rows  = data[sym];
-    const color = SYM_COLOR[sym] || '#888';
-    const id    = `momChart_${sym}`;
+    const rows = data[sym], color = SYM_COLOR[sym] || '#888', id = `momChart_${sym}`;
     _createCard(grid, color, `${sym} — Momentum %`, id);
-
     const pts = _validPoints(rows, 'mom');
     const xLabels = rows.map(r => r.time);
-
     State.chartInstances.push(_makeChart(id, [
-      {
-        label: 'Momentum %',
-        data: pts,
-        // Colour each segment by sign via segment plugin approach — use a gradient approximation
-        borderColor: color, backgroundColor: color + '15', fill: false,
-        borderWidth: 1.8, pointRadius: 2, pointHoverRadius: 5, tension: .3,
-      },
-      {
-        label: 'Zero line',
-        data: xLabels.map(x => ({ x, y: 0 })),
-        borderColor: 'rgba(74,96,112,.5)', borderDash: [4, 4],
-        borderWidth: 1, pointRadius: 0, tension: 0,
-      },
-    ], {
-      tooltipCb: { label: c => c.dataset.label === 'Momentum %' ? ` MOM ${c.parsed.y.toFixed(2)}%` : '' },
-    }));
+      { label: 'Momentum %', data: pts, borderColor: color, backgroundColor: color + '15', fill: false,
+        borderWidth: 1.8, pointRadius: 2, pointHoverRadius: 5, tension: .3 },
+      { label: 'Zero', data: xLabels.map(x => ({ x, y: 0 })),
+        borderColor: 'rgba(74,96,112,.5)', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, tension: 0 },
+    ], { tooltipCb: { label: c => c.dataset.label === 'Momentum %' ? ` MOM ${c.parsed.y.toFixed(2)}%` : '' } }));
   });
 }
